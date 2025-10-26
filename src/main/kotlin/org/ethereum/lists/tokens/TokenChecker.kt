@@ -44,9 +44,14 @@ fun getRPC(chainId: ChainId): EthereumRPC? {
         return null
     }
     if (rpcMap[chainId.value] == null) {
-        val chain = chains?.first { it.chainId == chainId.value.toLong() }
+        val chain = chains?.firstOrNull { it.chainId == chainId.value.toLong() }
 
-        val rpc = chain?.rpc?.firstOrNull {
+        if (chain == null) {
+            println("No RPC endpoint available for chainId ${chainId.value} – ensure ethereum-lists/chains includes this network.")
+            return null
+        }
+
+        val rpc = chain.rpc?.firstOrNull {
             try {
                 HttpEthereumRPC(it).chainId()?.value == chainId.value
             } catch (e: Exception) {
