@@ -64,11 +64,10 @@ fun getRPC(chainId: ChainId): EthereumRPC? {
 
 suspend fun checkTokenFile(file: File, onChainCheck: Boolean = false, chainId: ChainId? = null) {
 
-    file.reader().use { reader ->
-        Klaxon().parseJsonObject(reader).checkFields(mandatoryFields, optionalFields)
+    val jsonObject = file.reader().use { reader ->
+        Klaxon().parseJsonObject(reader) ?: throw InvalidJSON("Failed to parse token json")
     }
-
-    val jsonObject = Klaxon().parseJsonObject(file.reader())
+    jsonObject.checkFields(mandatoryFields, optionalFields)
     val address = Address(jsonObject["address"] as String)
     val addressEIP1191 = if (jsonObject["address_eip1191"] != null) Address(jsonObject["address_eip1191"] as String) else null
 
