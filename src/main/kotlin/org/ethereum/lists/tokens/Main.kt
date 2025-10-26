@@ -4,7 +4,6 @@ import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import java.io.File
-import java.nio.file.Files
 import kotlin.system.exitProcess
 import org.kethereum.model.ChainId
 
@@ -67,13 +66,23 @@ fun getChainId(networkName: String) = networkMapping[networkName]?.let {
 }
 
 private fun checkForTokenDefinitionsInWrongPath() {
-    File(".").walk().forEach { path ->
-        if (path.isDirectory
-            && !Files.isSameFile((path.parentFile ?: path).toPath(), allNetworksTokenDir.toPath())
-            && !path.absolutePath.contains("/test_tokens/")
-        ) {
-            path.list()?.firstOrNull { it.startsWith("0x") }?.let {
-                throw IllegalArgumentException("There is a token definition file ($it) placed in a directory where it does not belong (${path.absolutePath})")
+    val tokensRoot = allNetworksTokenDir.toPath().toAbsolutePath().normalize()
+    val testTokensRoot = File("src/test/resources/test_tokens").toPath().toAbsolutePath().normalize()
+
+    File(".").walk().forEach { candidate ->
+        if (!candidate.isDirectory) {
+            return@forEach
+        }
+
+        val normalizedPath = candidate.toPath().toAbsolutePath().normalize()
+        val isTokensDir = normalizedPath.startsWith(tokensRoot)
+        val isTestTokensDir = normalizedPath.startsWith(testTokensRoot)
+
+        if (!isTokensDir && !isTestTokensDir) {
+            candidate.list()?.firstOrNull { it.startsWith("0x") }?.let {
+                throw IllegalArgumentException(
+                    "There is a token definition file ($it) placed in a directory where it does not belong ($normalizedPath)"
+                )
             }
         }
     }
